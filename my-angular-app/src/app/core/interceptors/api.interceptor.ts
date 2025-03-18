@@ -1,26 +1,24 @@
-import { Injectable } from '@angular/core';
-import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpContextToken } from '@angular/common/http';
+import { HttpInterceptorFn } from '@angular/common/http';
+import { HttpRequest, HttpHandlerFn, HttpContextToken } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+// Define a context token for serviceName
 export const SERVICE_NAME = new HttpContextToken<null | 'CM_SAAS' | 'SC_SAAS'>(() => null);
 
-@Injectable()
-export class ApiInterceptor implements HttpInterceptor {
-  private baseUrls = {
-    CM_SAAS: 'https://api.cm-saas.com',
-    SC_SAAS: 'https://api.sc-saas.com'
-  };
+const baseUrls = {
+  CM_SAAS: 'https://api.cm-saas.com',
+  SC_SAAS: 'https://api.sc-saas.com'
+};
 
-  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-    const serviceName = req.context.get(SERVICE_NAME);
+export const apiInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn): Observable<any> => {
+  const serviceName = req.context.get(SERVICE_NAME);
 
-    if (serviceName && this.baseUrls[serviceName]) {
-      const modifiedReq = req.clone({
-        url: `${this.baseUrls[serviceName]}${req.url}`
-      });
-      return next.handle(modifiedReq);
-    }
-
-    return next.handle(req);
+  if (serviceName && baseUrls[serviceName]) {
+    const modifiedReq = req.clone({
+      url: `${baseUrls[serviceName]}${req.url}`
+    });
+    return next(modifiedReq);
   }
-}
+
+  return next(req);
+};
